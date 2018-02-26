@@ -21,7 +21,7 @@ void cameraMovement(GLFWwindow* window);
 GLuint setupTexture(std::string filepath);
 
 //Function to draw the scene
-void drawScene(GLsizei element, unsigned int vaoID);
+void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID);
 //motion is the position to the carmera
 glm::vec3 motion = glm::vec3(0, 0, 0);
 glm::mat4x4 projection = glm::perspective(glm::radians(120.0), 4.0 / 3.0, 1.0, 100.0);
@@ -126,13 +126,13 @@ void runProgram(GLFWwindow* window)
 	float Texture[] = {
 		0, 0, //0
 		0, 1,  //1
-		1, 0, 
+		1, 0,
 		1, 1
 	};
-
+	unsigned int textureID;
 	//vaoID = setupVAO(vertices, 15 * 3, indices, 15, colours, 15 * 4);
-	vaoID = setupVAO(verticesOneTriangle, 6 * 3, indicesOneTriangle, 6, colour, 3 * 3);
-	setupTexture("../diamond.png");
+	vaoID = setupVAO(verticesOneTriangle, 6 * 3, indicesOneTriangle, 6, Texture, 2 * 4);
+	textureID = setupTexture("../diamond.png");
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -142,7 +142,7 @@ void runProgram(GLFWwindow* window)
 		// Draw your scene here
 		glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(MVP));
 		glBindVertexArray(vaoID);
-		drawScene(6, vaoID);
+		drawScene(6, vaoID, textureID);
 		updateMVP();
 		// Handle other events
 		glfwPollEvents();
@@ -167,17 +167,19 @@ GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices,
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertlength, vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glEnableVertexAttribArray(0);
+
 	//IBO
 	glGenBuffers(1, &iboID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indiceslength, indices, GL_STATIC_DRAW);
+
 	//CBO
 	glGenBuffers(1, &cboID);
 	glBindBuffer(GL_ARRAY_BUFFER, cboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*texturelength, texture, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	printf("%s\n","Test" );
 	return vaoID;
 }
 
@@ -185,26 +187,40 @@ GLuint setupTexture(std::string filepath) {
 	PNGImage image;
 	image = loadPNGFile(filepath);
 	GLuint textureID = 1;
+	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	//std::cout << image.pixels[0]+ "\n" << std::endl;
 	printf("%d %d \n", &image.pixels[0],image.pixels);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA,GL_RGBA8UI, &image.pixels[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glBindTextureUnit(5,textureID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glBindTextureUnit(1,textureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return textureID;
 
-	
+
+
 	return textureID;
 }
 
-void drawScene(GLsizei element, unsigned int vaoID) {
+void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
 	//Draw the triangles
-	glBindVertexArray(vaoID);
-	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
-	updateMVP();	
-}
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 
+	glBindVertexArray(vaoID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	//glBindTextureUnit(5,textureID);
+
+	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
+
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	updateMVP();
+}
+//g
 void handleKeyboardInput(GLFWwindow* window)
 {
 	// Use escape key for terminating the GLFW window
