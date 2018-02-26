@@ -198,10 +198,6 @@ GLuint setupTexture(std::string filepath) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	return textureID;
-
-
-
-	return textureID;
 }
 
 void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
