@@ -56,54 +56,7 @@ void runProgram(GLFWwindow* window)
 	shader.makeBasicShader("../gloom/shaders/simple.vert", "../gloom/shaders/simple.frag");
 	shader.activate();
 
-	//vertices to 5 triangles
-	float vertices[] = {
-		-0.1, -0.1, 0.0, //0
-		0.1, -0.1, 0.0, //1
-		0.0, 0.1, 0.0, //2
 
-		0.4, 0.5, 0.0, //3
-		0.2, 0.5, 0.0, //4
-		0.3, 0.3, 0.0,//5
-
-		0.6, 0.5, 0.0,//6
-		0.4, 0.5, 0.0,
-		0.5, 0.3, 0.0,//7
-
-		0.1, -0.1, 0.0,
-		0.3, -0.1, 0.0,//8
-		0.2, 0.1, 0.0,//9
-
-		-0.3, -0.1, 0.0,//10
-		-0.1, -0.1, 0.0,
-		-0.2, 0.1, 0.0//11
-	};
-	//It's the indices to the 5 triangles
-	unsigned int indices[] = {
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
-	};
-	//colors for five triangles
-	float colours[] = {
-		0.0, 0.0, 0.0, 1.0, //0
-		0.0, 0.0, 0.0, 1.0, //1
-		0.0, 0.0, 0.0, 1.0, //2
-
-		1.0, 1.0, 1.0,  1.0, //3
-		1.0, 1.0, 1.0,  1.0, //4
-		1.0, 1.0, 1.0,  1.0, //5
-
-		0.8, 0.5, 0.3, 1.0, //6
-		0.8, 0.5, 0.3, 1.0, //7
-		0.8, 0.5, 0.3, 1.0, //8
-
-		0.0, 1.0, 0.0, 1.0, //9
-		0.0, 1.0, 0.0, 1.0, // 10
-		0.0, 1.0, 0.0, 1.0, //11
-
-		0.8, 0.0, 1.0, 1.0, //12
-		0.8, 0.0, 1.0, 1.0, //13
-		0.8, 0.0, 1.0, 1.0 //14
-	};
 	// vertices for one triangle
 	float verticesOneTriangle[] = {
 		-0.6, -0.3, -1.2, //0
@@ -116,18 +69,12 @@ void runProgram(GLFWwindow* window)
 		0, 1, 2,
 		0, 2, 3
 	};
-	//color for one triangle
-	float colour[] = {
-		1.0, 1.0, 1.0, 0.8,
-		1.0, 1.0, 1.0, 0.8,
-		1.0, 1.0, 1.0, 0.8
-	};
 
 	float Texture[] = {
-		0, 0, //0
-		0, 1,  //1
-		1, 0,
-		1, 1
+		0, 0.5, //0
+		0.5, 0.1,  //1
+		1, 0.5,
+		0.5, 0.9
 	};
 	unsigned int textureID;
 	//vaoID = setupVAO(vertices, 15 * 3, indices, 15, colours, 15 * 4);
@@ -192,11 +139,10 @@ GLuint setupTexture(std::string filepath) {
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	//std::cout << image.pixels[0]+ "\n" << std::endl;
 	printf("%d %d \n", &image.pixels[0],image.pixels);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA,GL_RGBA8UI, &image.pixels[0]);
-	//glBindTextureUnit(5,textureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
+	glBindTextureUnit(5,textureID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	return textureID;
 }
 
@@ -207,7 +153,7 @@ void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
 
 	glBindVertexArray(vaoID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	//glBindTextureUnit(5,textureID);
+	glBindTextureUnit(5,textureID);
 
 	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
 

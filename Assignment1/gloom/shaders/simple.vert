@@ -1,7 +1,7 @@
 #version 430 core
 
 layout(location = 0) in vec3 position;
-layout(location = 2) in vec2 vertexUV;
+layout(location = 1) in vec2 vertexUV;
 
 out vec2 UV;
 uniform layout(location = 3) mat4x4 MVP;
