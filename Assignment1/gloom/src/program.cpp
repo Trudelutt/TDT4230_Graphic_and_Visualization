@@ -14,7 +14,8 @@
 #include <iostream>
 
 // Function for seting up VAO
-GLuint setupVAO(float vertices[], unsigned int vertlength, unsigned int indices[], unsigned int indiceslength, float colours[], unsigned int colourlength);
+GLuint setupVAO(float vertices[], unsigned int vertlength, unsigned int indices[],
+	 unsigned int indiceslength, float colours[], unsigned int colourlength, glm::vec3 normals);
 void updateMVP();
 void cameraMovement(GLFWwindow* window);
 
@@ -58,6 +59,12 @@ void runProgram(GLFWwindow* window)
 
 
 	// vertices for one triangle
+	/*float verticesOneTriangle[] = {
+		-0.6, -0.3, -1.2, //0
+		-0.55, -0.3, -1.2, //1
+		-0.55, -0.25, -1.2,
+		-0.6, -0.25, -1.2
+	};*/
 	float verticesOneTriangle[] = {
 		-0.6, -0.3, -1.2, //0
 		0, -0.3, -1.2, //1
@@ -65,20 +72,22 @@ void runProgram(GLFWwindow* window)
 		-0.6, 0.3, -1.2
 	};
 	//indices for one triangle
-	unsigned int indicesOneTriangle[] = {
+ unsigned int indicesOneTriangle[] = {
 		0, 1, 2,
 		0, 2, 3
 	};
 
 	float Texture[] = {
-		0, 0.5, //0
+		0.1, 0.5, //0
 		0.5, 0.1,  //1
-		1, 0.5,
+		0.9, 0.5,
 		0.5, 0.9
 	};
+ glm::vec3 normals = glm::vec3(0, 0, 1);
+
 	unsigned int textureID;
 	//vaoID = setupVAO(vertices, 15 * 3, indices, 15, colours, 15 * 4);
-	vaoID = setupVAO(verticesOneTriangle, 6 * 3, indicesOneTriangle, 6, Texture, 2 * 4);
+	vaoID = setupVAO(verticesOneTriangle, 6 * 3, indicesOneTriangle, 6, Texture, 2 * 4, normals);
 	textureID = setupTexture("../diamond.png");
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
@@ -88,6 +97,9 @@ void runProgram(GLFWwindow* window)
 		//vaoID = setupVAO(verticesOneTriangle, 9, indicesOneTriangle, 3, colour, 3 * 4);
 		// Draw your scene here
 		glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(MVP));
+		glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(Model));
+
+
 		glBindVertexArray(vaoID);
 		drawScene(6, vaoID, textureID);
 		updateMVP();
@@ -102,11 +114,12 @@ void runProgram(GLFWwindow* window)
 
 
 GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices, unsigned int indiceslength,
-	float* texture, unsigned int texturelength) {
-	GLuint vaoID = 0;
-	GLuint vboID = 0;
-	GLuint iboID = 1;
-	GLuint cboID = 2;
+	float* texture, unsigned int texturelength,glm::vec3 normals) {
+	GLuint vaoID;
+	GLuint vboID;
+	GLuint iboID;
+	GLuint cboID;
+	GLuint normalbuffer;
 	glGenVertexArrays(1, &vaoID);
 	glBindVertexArray(vaoID);
 	//VBO
@@ -120,13 +133,17 @@ GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices,
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indiceslength, indices, GL_STATIC_DRAW);
 
-	//CBO
+	//texturemaping
 	glGenBuffers(1, &cboID);
 	glBindBuffer(GL_ARRAY_BUFFER, cboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*texturelength, texture, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	printf("%s\n","Test" );
+	//normalbuffer
+	glGenBuffers(1,&normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER,normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, 3* sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, 0, (void*)0);
 	return vaoID;
 }
 
@@ -141,8 +158,9 @@ GLuint setupTexture(std::string filepath) {
 	printf("%d %d \n", &image.pixels[0],image.pixels);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
 	glBindTextureUnit(5,textureID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	return textureID;
 }
 
@@ -150,6 +168,7 @@ void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
 	//Draw the triangles
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
 	glBindVertexArray(vaoID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
@@ -157,6 +176,7 @@ void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
 
 	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
 
+	glEnableVertexAttribArray(2);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -174,6 +194,7 @@ void handleKeyboardInput(GLFWwindow* window)
 
 void updateMVP() {
 	glm::mat4 View = glm::translate(-motion)* Rotation* Scale;
+	glUniformMatrix4fv(5, 1, GL_FALSE, glm::value_ptr(View));
 	MVP = projection * View * Model;
 }
 
