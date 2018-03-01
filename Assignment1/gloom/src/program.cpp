@@ -15,7 +15,7 @@
 
 // Function for seting up VAO
 GLuint setupVAO(float vertices[], unsigned int vertlength, unsigned int indices[],
-	 unsigned int indiceslength, float colours[], unsigned int colourlength, glm::vec3 normals);
+	 unsigned int indiceslength, float colours[], unsigned int colourlength, float* normals);
 void updateMVP();
 void cameraMovement(GLFWwindow* window);
 
@@ -78,12 +78,18 @@ void runProgram(GLFWwindow* window)
 	};
 
 	float Texture[] = {
-		0.1, 0.5, //0
-		0.5, 0.1,  //1
-		0.9, 0.5,
-		0.5, 0.9
+		0.0, 0.5, //0
+		0.5, 0.0,  //1
+		1.0, 0.5,
+		0.5, 1.0
 	};
- glm::vec3 normals = glm::vec3(0, 0, 1);
+
+  float normals[] = {
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1
+	};
 
 	unsigned int textureID;
 	//vaoID = setupVAO(vertices, 15 * 3, indices, 15, colours, 15 * 4);
@@ -98,6 +104,7 @@ void runProgram(GLFWwindow* window)
 		// Draw your scene here
 		glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(MVP));
 		glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(Model));
+		glUniform3fv(7,1,  glm::value_ptr(motion));
 
 
 		glBindVertexArray(vaoID);
@@ -114,7 +121,7 @@ void runProgram(GLFWwindow* window)
 
 
 GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices, unsigned int indiceslength,
-	float* texture, unsigned int texturelength,glm::vec3 normals) {
+	float* texture, unsigned int texturelength,float* normals) {
 	GLuint vaoID;
 	GLuint vboID;
 	GLuint iboID;
@@ -142,7 +149,7 @@ GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices,
 	//normalbuffer
 	glGenBuffers(1,&normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER,normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER, 3* sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,  4*sizeof(float), &normals, GL_STATIC_DRAW);
 	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, 0, (void*)0);
 	return vaoID;
 }
@@ -154,10 +161,10 @@ GLuint setupTexture(std::string filepath) {
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	//std::cout << image.pixels[0]+ "\n" << std::endl;
-	printf("%d %d \n", &image.pixels[0],image.pixels);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
 	glBindTextureUnit(5,textureID);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -194,7 +201,6 @@ void handleKeyboardInput(GLFWwindow* window)
 
 void updateMVP() {
 	glm::mat4 View = glm::translate(-motion)* Rotation* Scale;
-	glUniformMatrix4fv(5, 1, GL_FALSE, glm::value_ptr(View));
 	MVP = projection * View * Model;
 }
 
