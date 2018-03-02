@@ -12,13 +12,17 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
+#include <chrono>
+
+
 
 // Function for seting up VAO
 GLuint setupVAO(float vertices[], unsigned int vertlength, unsigned int indices[],
-	 unsigned int indiceslength, float colours[], unsigned int colourlength, float* normals);
+	 unsigned int indiceslength, float colours[],
+	  unsigned int colourlength, float* normals, unsigned int  normalslenght);
+
 void updateMVP();
 void cameraMovement(GLFWwindow* window);
-
 GLuint setupTexture(std::string filepath);
 
 //Function to draw the scene
@@ -58,30 +62,30 @@ void runProgram(GLFWwindow* window)
 	shader.activate();
 
 
-	// vertices for one triangle
+	// Triangle that taks up around 10-20 pixels
 	/*float verticesOneTriangle[] = {
 		-0.6, -0.3, -1.2, //0
 		-0.55, -0.3, -1.2, //1
 		-0.55, -0.25, -1.2,
 		-0.6, -0.25, -1.2
 	};*/
-	float verticesOneTriangle[] = {
+	float verticesSquare[] = {
 		-0.6, -0.3, -1.2, //0
 		0, -0.3, -1.2, //1
 		0, 0.3, -1.2,
 		-0.6, 0.3, -1.2
 	};
 	//indices for one triangle
- unsigned int indicesOneTriangle[] = {
+ unsigned int indicesSquare[] = {
 		0, 1, 2,
 		0, 2, 3
 	};
 
 	float Texture[] = {
-		0.0, 0.5, //0
-		0.5, 0.0,  //1
-		1.0, 0.5,
-		0.5, 1.0
+		0.1, 0.5, //0
+		0.5, 0,  //1
+		0.9, 0.5,
+		0.5, 1
 	};
 
   float normals[] = {
@@ -92,19 +96,20 @@ void runProgram(GLFWwindow* window)
 	};
 
 	unsigned int textureID;
-	//vaoID = setupVAO(vertices, 15 * 3, indices, 15, colours, 15 * 4);
-	vaoID = setupVAO(verticesOneTriangle, 6 * 3, indicesOneTriangle, 6, Texture, 2 * 4, normals);
+	vaoID = setupVAO(verticesSquare, 6 * 3, indicesSquare, 6, Texture, 2 * 4, normals, 4*3);
 	textureID = setupTexture("../diamond.png");
+	float timeElapsed = 0;
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
 	{
+		timeElapsed += 0.016;
+		glUniform1f(9, timeElapsed);
 		// Clear colour and depth buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//vaoID = setupVAO(verticesOneTriangle, 9, indicesOneTriangle, 3, colour, 3 * 4);
 		// Draw your scene here
 		glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(MVP));
 		glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(Model));
-		glUniform3fv(7,1,  glm::value_ptr(motion));
+		glUniform3fv(7,1,  glm::value_ptr(-motion));
 
 
 		glBindVertexArray(vaoID);
@@ -121,7 +126,7 @@ void runProgram(GLFWwindow* window)
 
 
 GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices, unsigned int indiceslength,
-	float* texture, unsigned int texturelength,float* normals) {
+	float* texture, unsigned int texturelength,float* normals, unsigned int normalslenght) {
 	GLuint vaoID;
 	GLuint vboID;
 	GLuint iboID;
@@ -149,7 +154,7 @@ GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices,
 	//normalbuffer
 	glGenBuffers(1,&normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER,normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER,  4*sizeof(float), &normals, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* normalslenght, normals, GL_STATIC_DRAW);
 	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, 0, (void*)0);
 	return vaoID;
 }
@@ -163,8 +168,10 @@ GLuint setupTexture(std::string filepath) {
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
 	glBindTextureUnit(5,textureID);
+	// Use this if not mipmaping
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// enable mipmap
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -200,7 +207,8 @@ void handleKeyboardInput(GLFWwindow* window)
 }
 
 void updateMVP() {
-	glm::mat4 View = glm::translate(-motion)* Rotation* Scale;
+	glm::mat4 View = glm::lookAt(motion, glm::vec3(-0.3, -0.15, -1.2),glm::vec3(0,1,0));
+	glUniformMatrix4fv(8, 1, GL_FALSE, glm::value_ptr(View));
 	MVP = projection * View * Model;
 }
 

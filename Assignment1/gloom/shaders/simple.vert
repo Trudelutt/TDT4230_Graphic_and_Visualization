@@ -9,21 +9,18 @@ out vec3 N;
 out vec3 surfacePosition;
 out mat4 MV;
 
-out mat4 modelposition;
+
 uniform layout(location = 3) mat4x4 MVP;
 uniform layout(location = 4) mat4x4 Model;
-uniform layout(location = 5) mat4x4 View;
+uniform layout(location = 8) mat4x4 View;
 
 
 void main()
 {
-  N = normal;
-
-	modelposition = MV*(position,1);
-	surfacePosition = position;
   MV = Model*View;
+  N = normalize(transpose(inverse(mat3(MV)))*normal);
+	surfacePosition = vec3(MV*vec4(position,1));
 	UV = vertexUV;
-    //gl_Position = MVP* vec4(position, 1.0f)*matrix;
 	gl_Position = MVP * vec4(position.x, position.y, position.z, 1.0f);
 
 }
