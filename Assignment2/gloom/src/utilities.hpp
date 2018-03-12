@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <cstdlib> 
 
 typedef struct PNGImage {
 	unsigned int width, height;
@@ -11,3 +13,7 @@ typedef struct PNGImage {
 } PNGImage;
 
 PNGImage loadPNGFile(std::string fileName);
+
+double getTimeDeltaSeconds();
+
+float random();

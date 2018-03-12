@@ -3,6 +3,7 @@
 #include "gloom/gloom.hpp"
 #include "gloom/shader.hpp"
 #include "utilities.hpp"
+#include "OBJLoader.h"
 //global
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -17,19 +18,20 @@
 
 
 // Function for seting up VAO
-GLuint setupVAO(float vertices[], unsigned int vertlength, unsigned int indices[],
-	 unsigned int indiceslength, float colours[],
-	  unsigned int colourlength, float* normals, unsigned int  normalslenght);
+GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices,
+	 unsigned int indiceslength, float2* textureCoordinates, float3* normals);
 
 void updateMVP();
 void cameraMovement(GLFWwindow* window);
-GLuint setupTexture(std::string filepath);
+GLuint setupTexture(std::string filepath,unsigned int id);
 
 //Function to draw the scene
 void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID);
-//motion is the position to the carmera
-glm::vec3 motion = glm::vec3(0, 0, 0);
-glm::mat4x4 projection = glm::perspective(glm::radians(120.0), 4.0 / 3.0, 1.0, 100.0);
+//motion is position to the carmera
+
+glm::vec3 motion = glm::vec3(-2.0f, 1.0f, -8.0f);
+glm::vec3 orientation = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)windowWidth/(float)windowHeight, 0.1f, 1000.0f);
 glm::mat4 Model = glm::mat4(1.0f);
 glm::mat4x4 Scale = glm::mat4(1.0f);
 glm::mat4 Rotation = glm::mat4(1.0f);
@@ -62,47 +64,20 @@ void runProgram(GLFWwindow* window)
 	shader.activate();
 
 
-	// Triangle that taks up around 10-20 pixels
-	/*float verticesOneTriangle[] = {
-		-0.6, -0.3, -1.2, //0
-		-0.55, -0.3, -1.2, //1
-		-0.55, -0.25, -1.2,
-		-0.6, -0.25, -1.2
-	};*/
-	float verticesSquare[] = {
-		-0.6, -0.3, -1.2, //0
-		0, -0.3, -1.2, //1
-		0, 0.3, -1.2,
-		-0.6, 0.3, -1.2
-	};
-	//indices for one triangle
- unsigned int indicesSquare[] = {
-		0, 1, 2,
-		0, 2, 3
-	};
-
-	float Texture[] = {
-		0.1, 0.5, //0
-		0.5, 0,  //1
-		0.9, 0.5,
-		0.5, 1
-	};
-
-  float normals[] = {
-		0, 0, 1,
-		0, 0, 1,
-		0, 0, 1,
-		0, 0, 1
-	};
 
 	unsigned int textureID;
-	vaoID = setupVAO(verticesSquare, 6 * 3, indicesSquare, 6, Texture, 2 * 4, normals, 4*3);
-	textureID = setupTexture("../diamond.png");
+	Mesh obj = loadOBJ("../MFEP_Rock_3.obj");
+	vaoID = setupVAO(obj.vertices, obj.vertexCount, obj.indices, obj.indexCount, obj.textureCoordinates, obj.normals);
+	textureID = setupTexture("../MFEP_Rock_3_DefaultMaterial_AlbedoTransparency.png",5);
+	unsigned int AmibientOcculationValue = setupTexture("../MFEP_Rock_3_DefaultMaterial_AmbientOcclusion.png",12);
+
+	//std::cout << obj.vertices[i] << std::endl;
+	//printf("%d\n", obj.vertices[2]);
 	float timeElapsed = 0;
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
 	{
-		timeElapsed += 0.016;
+		timeElapsed += 0.0016;
 		glUniform1f(9, timeElapsed);
 		// Clear colour and depth buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -113,7 +88,7 @@ void runProgram(GLFWwindow* window)
 
 
 		glBindVertexArray(vaoID);
-		drawScene(6, vaoID, textureID);
+		drawScene(obj.vertexCount, vaoID, textureID);
 		updateMVP();
 		// Handle other events
 		glfwPollEvents();
@@ -125,8 +100,8 @@ void runProgram(GLFWwindow* window)
 }
 
 
-GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices, unsigned int indiceslength,
-	float* texture, unsigned int texturelength,float* normals, unsigned int normalslenght) {
+GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices, unsigned int indiceslength,
+	float2* textureCoordinates, float3* normals) {
 	GLuint vaoID;
 	GLuint vboID;
 	GLuint iboID;
@@ -137,29 +112,29 @@ GLuint setupVAO(float* vertices, unsigned int vertlength, unsigned int* indices,
 	//VBO
 	glGenBuffers(1, &vboID);
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertlength, vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * vertlength , vertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
 
 	//IBO
 	glGenBuffers(1, &iboID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboID);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indiceslength, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* indiceslength, indices, GL_STATIC_DRAW);
 
 	//texturemaping
 	glGenBuffers(1, &cboID);
 	glBindBuffer(GL_ARRAY_BUFFER, cboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*texturelength, texture, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float2)*vertlength, textureCoordinates, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
 
 	//normalbuffer
 	glGenBuffers(1,&normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER,normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* normalslenght, normals, GL_STATIC_DRAW);
-	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3)*vertlength, normals, GL_STATIC_DRAW);
+	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
 	return vaoID;
 }
 
-GLuint setupTexture(std::string filepath) {
+GLuint setupTexture(std::string filepath, unsigned int id) {
 	PNGImage image;
 	image = loadPNGFile(filepath);
 	GLuint textureID = 1;
@@ -167,7 +142,7 @@ GLuint setupTexture(std::string filepath) {
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
-	glBindTextureUnit(5,textureID);
+	glBindTextureUnit(id,textureID);
 	// Use this if not mipmaping
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -207,7 +182,8 @@ void handleKeyboardInput(GLFWwindow* window)
 }
 
 void updateMVP() {
-	glm::mat4 View = glm::lookAt(motion, glm::vec3(-0.3, -0.15, -1.2),glm::vec3(0,1,0));
+	//find out where the object is placed
+	glm::mat4 View = glm::lookAt(motion, glm::vec3(0, 0, 0)-motion,glm::vec3(0,1,0));
 	glUniformMatrix4fv(8, 1, GL_FALSE, glm::value_ptr(View));
 	MVP = projection * View * Model;
 }

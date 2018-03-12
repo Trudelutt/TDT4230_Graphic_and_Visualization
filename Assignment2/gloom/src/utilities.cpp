@@ -34,6 +34,33 @@ PNGImage loadPNGFile(std::string fileName)
 	image.width = width;
 	image.height = height;
 	image.pixels = pixels;
+
 	return image;
 
+}
+
+static std::chrono::steady_clock::time_point _previousTimePoint = std::chrono::steady_clock::now();
+
+double getTimeDeltaSeconds() {
+	std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point previousTime = _previousTimePoint;
+
+	long long timeDelta = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - _previousTimePoint).count();
+	double timeDeltaSeconds = (double)timeDelta / 1000000000.0;
+
+	_previousTimePoint = currentTime;
+
+	return timeDeltaSeconds;
+}
+
+bool isRandomInitialised = false;
+
+float random() {
+	if (!isRandomInitialised) {
+		// Initialise the random number generator using the current time as a seed
+		srand(static_cast <unsigned> (time(0)));
+		isRandomInitialised = true;
+	}
+	// rand() produces a random integer between 0 and RAND_MAX. This normalises it to a number between 0 and 1.
+	return static_cast <float> (rand()) / static_cast <float>(RAND_MAX);
 }
