@@ -26,7 +26,7 @@ void cameraMovement(GLFWwindow* window);
 GLuint setupTexture(std::string filepath,unsigned int id);
 
 //Function to draw the scene
-void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID);
+void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID, unsigned int ambientTexture);
 //motion is position to the carmera
 
 glm::vec3 motion = glm::vec3(-2.0f, 1.0f, -8.0f);
@@ -69,15 +69,20 @@ void runProgram(GLFWwindow* window)
 	Mesh obj = loadOBJ("../MFEP_Rock_3.obj");
 	vaoID = setupVAO(obj.vertices, obj.vertexCount, obj.indices, obj.indexCount, obj.textureCoordinates, obj.normals);
 	textureID = setupTexture("../MFEP_Rock_3_DefaultMaterial_AlbedoTransparency.png",5);
-	unsigned int AmibientOcculationValue = setupTexture("../MFEP_Rock_3_DefaultMaterial_AmbientOcclusion.png",12);
+	unsigned int animationID = setupTexture("../animation.png", 11);
+	unsigned int amibientOcculationValue = setupTexture("../MFEP_Rock_3_DefaultMaterial_AmbientOcclusion.png",12);
 
-	//std::cout << obj.vertices[i] << std::endl;
-	//printf("%d\n", obj.vertices[2]);
+	glBindTextureUnit(5, textureID);
+	glBindTextureUnit(11, animationID);
+	glBindTextureUnit(12, amibientOcculationValue);
+	
+
 	float timeElapsed = 0;
+	glUniform1f(10, obj.vertexCount);
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
 	{
-		timeElapsed += 0.0016;
+		timeElapsed += getTimeDeltaSeconds();
 		glUniform1f(9, timeElapsed);
 		// Clear colour and depth buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -88,7 +93,7 @@ void runProgram(GLFWwindow* window)
 
 
 		glBindVertexArray(vaoID);
-		drawScene(obj.vertexCount, vaoID, textureID);
+		drawScene(obj.vertexCount, vaoID, textureID, amibientOcculationValue);
 		updateMVP();
 		// Handle other events
 		glfwPollEvents();
@@ -124,7 +129,7 @@ GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices
 	glGenBuffers(1, &cboID);
 	glBindBuffer(GL_ARRAY_BUFFER, cboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float2)*vertlength, textureCoordinates, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, 0);
 
 	//normalbuffer
 	glGenBuffers(1,&normalbuffer);
@@ -142,7 +147,7 @@ GLuint setupTexture(std::string filepath, unsigned int id) {
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image.pixels[0]);
-	glBindTextureUnit(id,textureID);
+	//glBindTextureUnit(id,textureID);
 	// Use this if not mipmaping
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -153,19 +158,16 @@ GLuint setupTexture(std::string filepath, unsigned int id) {
 	return textureID;
 }
 
-void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID) {
+void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID, unsigned int ambienttexture) {
 	//Draw the triangles
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
 	glBindVertexArray(vaoID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glBindTextureUnit(5,textureID);
-
 	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
 
-	glEnableVertexAttribArray(2);
+	glDisableVertexAttribArray(2);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);

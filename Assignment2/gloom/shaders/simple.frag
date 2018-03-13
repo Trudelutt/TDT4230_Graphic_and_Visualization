@@ -16,7 +16,7 @@ void main()
 {
   vec3 materialColor = texture( texSampler, UV ).rgb;
   vec3 ambientvector = texture(ambientOcculationTexture, UV).rgb;
-  float ambientlight = normalize( (ambientvector.x+ambientvector.y+ ambientvector.z)/3);
+  float ambientOcclusionValue = texture(ambientOcculationTexture, UV).r ;
   vec3 normal = N;
   float lightIntensity = 1;
   vec3 l = -normalize(vec3(MV*vec4(vec3(cos(timeElapsed)*6,0,sin(timeElapsed)*6),1))-surfacePosition);
@@ -34,9 +34,16 @@ void main()
 	float specular = max(0,lightIntensity * specularCoefficient *pow(dot(surfaceTocamera,r),100));
 	float ambientColor = 0.5;
 
-	//color = vec4(materialColor*(ambientColor + diffuse + specular),1);
-	color = vec4(materialColor*(ambientlight + diffuse + specular),1);
-	//color = vec4(ambientvector,1);
+	//microshadows
+	float aperture = 2.0 * ambientOcclusionValue * ambientOcclusionValue;
+	float microshadow = clamp(abs(dot(l, normal)) + aperture - 1.0, 0.0, 1.0);
+
+
+	color = vec4(materialColor * microshadow *(0.5 + diffuse + specular),1);
+	//color = vec4(materialColor*(0.4 + diffuse + specular),1);
+	//color = vec4(materialColor*( microshadow),1);
+	//color = vec4(materialColor*ambientOcclusionValue,1);
+	//color = vec4(materialColor,1);
 
 
 }
