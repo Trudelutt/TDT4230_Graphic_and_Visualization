@@ -17,9 +17,13 @@
 
 
 
+
 // Function for seting up VAO
 GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices,
 	 unsigned int indiceslength, float2* textureCoordinates, float3* normals);
+
+GLuint calcTargetandBitangents(float3* vertices, unsigned int vertlength, unsigned int* indices,
+	unsigned int indiceslength, float2* textureCoordinates, float3* normals);
 
 void updateMVP();
 void cameraMovement(GLFWwindow* window);
@@ -66,16 +70,17 @@ void runProgram(GLFWwindow* window)
 
 
 	unsigned int textureID;
-	Mesh obj = loadOBJ("../MFEP_Rock_3.obj");
+	Mesh obj = loadOBJ("../assets/MFEP_Rock_3.obj");
 	vaoID = setupVAO(obj.vertices, obj.vertexCount, obj.indices, obj.indexCount, obj.textureCoordinates, obj.normals);
-	textureID = setupTexture("../MFEP_Rock_3_DefaultMaterial_AlbedoTransparency.png",5);
-	unsigned int animationID = setupTexture("../animation.png", 11);
-	unsigned int amibientOcculationValue = setupTexture("../MFEP_Rock_3_DefaultMaterial_AmbientOcclusion.png",12);
+	textureID = setupTexture("../assets/MFEP_Rock_3_DefaultMaterial_AlbedoTransparency.png",5);
+	unsigned int animationID = setupTexture("../assets/animation.png", 11);
+	unsigned int amibientOcculationid = setupTexture("../assets/MFEP_Rock_3_DefaultMaterial_AmbientOcclusion.png",13);
+	unsigned int normalmapid = setupTexture("../assets/MFEP_Rock_3_DefaultMaterial_Normal.png", 14);
 
 	glBindTextureUnit(5, textureID);
 	glBindTextureUnit(11, animationID);
-	glBindTextureUnit(12, amibientOcculationValue);
-	
+	glBindTextureUnit(13, amibientOcculationid);
+	glBindTextureUnit(14, normalmapid);
 
 	float timeElapsed = 0;
 	glUniform1f(10, obj.vertexCount);
@@ -93,7 +98,7 @@ void runProgram(GLFWwindow* window)
 
 
 		glBindVertexArray(vaoID);
-		drawScene(obj.vertexCount, vaoID, textureID, amibientOcculationValue);
+		drawScene(obj.vertexCount, vaoID, textureID, amibientOcculationid);
 		updateMVP();
 		// Handle other events
 		glfwPollEvents();
@@ -118,7 +123,7 @@ GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices
 	glGenBuffers(1, &vboID);
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * vertlength , vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	//IBO
 	glGenBuffers(1, &iboID);
@@ -129,13 +134,68 @@ GLuint setupVAO(float3* vertices, unsigned int vertlength, unsigned int* indices
 	glGenBuffers(1, &cboID);
 	glBindBuffer(GL_ARRAY_BUFFER, cboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float2)*vertlength, textureCoordinates, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, 0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	//normalbuffer
 	glGenBuffers(1,&normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER,normalbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float3)*vertlength, normals, GL_STATIC_DRAW);
-	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
+	glVertexAttribPointer(2,3,GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	std::vector<float3> tangents;
+	std::vector<float3> biTangents;
+
+	for (unsigned int i = 0; i < vertlength; i += 3)
+	{
+		float3 tangent;
+		float3 biTangent;
+
+		float3 edge1 = float3(vertices[i + 1].x- vertices[i].x, vertices[i + 1].y - vertices[i].y, vertices[i + 1].z - vertices[i].z);
+		float3 edge2 = float3(vertices[i + 2].x - vertices[i].x, vertices[i + 2].y - vertices[i].y, vertices[i + 2].z - vertices[i].z);
+		float2 deltaUV1 = float2(textureCoordinates[i + 1].x - textureCoordinates[i].x, textureCoordinates[i + 1].y - textureCoordinates[i].y);
+		float2 deltaUV2 = float2(textureCoordinates[i + 2].x - textureCoordinates[i].x, textureCoordinates[i + 2].y - textureCoordinates[i].y);
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+		glm::vec3 tangentNormalized = glm::normalize(glm::vec3(tangent.x, tangent.y, tangent.z));
+		tangent = float3(tangentNormalized.x, tangentNormalized.y, tangentNormalized.z);
+
+		biTangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		biTangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		biTangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+		glm::vec3 biTangentNormalized = glm::normalize(glm::vec3(biTangent.x, biTangent.y, biTangent.z));
+		biTangent = float3(biTangentNormalized.x, biTangentNormalized.y, biTangentNormalized.z);
+		//wil push all the three vertices on the tangent and biTangent arrays
+		for (int j = 0; j < 3; j++)
+		{
+			tangents.push_back(tangent);
+			biTangents.push_back(biTangent);
+		}
+	}
+
+	float3 *tangentsBuffer = new float3[tangents.size()];
+	std::copy(tangents.begin(), tangents.end(), tangentsBuffer);
+
+	float3 *biTangentsBuffer = new float3[biTangents.size()];
+	std::copy(biTangents.begin(), biTangents.end(), biTangentsBuffer);
+
+
+	GLuint tangentid;
+	glGenBuffers(1, &tangentid);
+	glBindBuffer(GL_ARRAY_BUFFER, tangentid);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3)*tangents.size(), tangentsBuffer, GL_STATIC_DRAW);
+	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	GLuint bitangentid;
+	glGenBuffers(1, &bitangentid);
+	glBindBuffer(GL_ARRAY_BUFFER, bitangentid);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3)*biTangents.size(), biTangentsBuffer, GL_STATIC_DRAW);
+	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	return vaoID;
 }
 
@@ -157,6 +217,7 @@ GLuint setupTexture(std::string filepath, unsigned int id) {
 	glGenerateMipmap(GL_TEXTURE_2D);
 	return textureID;
 }
+
 
 void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID, unsigned int ambienttexture) {
 	//Draw the triangles
