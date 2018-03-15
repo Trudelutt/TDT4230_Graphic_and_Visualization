@@ -3,10 +3,10 @@ in vec2 UV;
 in vec3 fragN;
 in vec3 surfacePosition;
 in mat4 MV;
-in mat3 TBN;
 in vec3 Tfrag;
 in vec3 B;
 in vec3 N;
+in layout(location = 15) mat3 TBN;
 
 out vec4 color;
 
@@ -24,7 +24,7 @@ void main()
   vec3 nm = texture(normalmap, UV).rgb;
   float ambientOcclusionValue = texture(ambientOcculationTexture, UV).r ;
   vec3 nor = normalize(nm *2.0 -1.0);
-  vec3 normal = normalize(TBN * nor);
+  vec3 normal = normalize( nor);
   float lightIntensity = 1;
   vec3 l =  normalize(vec3(MV*vec4(vec3(cos(timeElapsed)*6,0,sin(timeElapsed)*6),1))-surfacePosition);
  // vec3 l = -normalize(vec3(MV*vec4(10,0,0,1))-surfacePosition);
@@ -49,7 +49,7 @@ void main()
 	//color = vec4(materialColor * microshadow *(0.5 + diffuse + specular),1);
 	//color = vec4(materialColor*(0.4 + diffuse + specular),1);
 	//color = vec4(materialColor*( microshadow),1);
-	color = vec4(Tfrag,1);
+	color = vec4(TBN[0].xyz,1);
 	
 
 

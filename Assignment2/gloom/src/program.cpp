@@ -224,10 +224,14 @@ void drawScene(GLsizei element, unsigned int vaoID, unsigned int textureID, unsi
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(6);
+	glEnableVertexAttribArray(7);
 
 	glBindVertexArray(vaoID);
 	glDrawElements(GL_TRIANGLES, element, GL_UNSIGNED_INT, nullptr);
 
+	glDisableVertexAttribArray(7);
+	glDisableVertexAttribArray(6);
 	glDisableVertexAttribArray(2);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);

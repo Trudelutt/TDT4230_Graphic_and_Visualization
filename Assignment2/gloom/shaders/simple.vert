@@ -11,7 +11,6 @@ out vec2 UV;
 out vec3 fragN;
 out vec3 surfacePosition;
 out mat4 MV;
-out mat3 TBN;
 out vec3 Tfrag;
 out vec3 B;
 out vec3 N;
@@ -23,22 +22,24 @@ uniform layout(location = 8) mat4x4 View;
 uniform layout(location = 9) float timeElapsed;
 uniform layout(location = 10) float vertexCount;
 layout(binding = 11) uniform sampler2D texAnimation;
-
+out layout(location = 15)mat3 TBN;
 
 void main()
 {
 	vec3 T = normalize(vec3(Model *vec4(tangent,   0.0)));
-    vec3 B = normalize(vec3(Model *vec4(bitangent, 0.0)));
+    //vec3 B = normalize(vec3(Model *vec4(bitangent, 0.0)));
 	vec3 N = normalize(vec3(Model * vec4(normal,    0.0)));
+	T = normalize(T - dot(T, N) * N);
+	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 	N = normal;
-	Tfrag = T;
 	MV = Model*View;
-	fragN = normalize(transpose(inverse(mat3(MV)))*normal);
+	fragN = normalize(transpose(inverse(mat3(MV)))*bitangent);
 	surfacePosition = vec3(MV*vec4(position,1));
 	UV = vertexUV;
 	float animationOffset = texture(texAnimation,vec2(position.x, timeElapsed)).x;
 	gl_VertexID /vertexCount;
+	Tfrag = TBN[0].xyz;
 
 
 
