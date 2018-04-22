@@ -43,6 +43,6 @@ void main()
 
 
 	//gl_Position = MVP * vec4(position.xyz + normal*animationOffset*0.05, 1.0f);
-	gl_Position = MP * vec4(position.xyz, 1.0f);
+	gl_Position = View * vec4(position.xyz, 1.0f);
 	//gl_Position = MVP * vec4(squareposition.xyz, 1.0f);
 }

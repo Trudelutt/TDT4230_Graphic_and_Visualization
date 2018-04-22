@@ -82,10 +82,10 @@ void runProgram(GLFWwindow* window)
 	};
 
 	float Texture[] = {
-		0.1, 0.5, //0
-		0.5, 0,  //1
-		0.9, 0.5,
-		0.5, 1
+		0.0, 0.0, //0
+		1.0, 0,  //1
+		1.0, 1.0,
+		0.0, 1
 	};
 
   float normals[] = {
@@ -97,7 +97,7 @@ void runProgram(GLFWwindow* window)
 
 	unsigned int textureID;
 	vaoID = setupVAO(verticesSquare, 6 * 3, indicesSquare, 6, Texture, 2 * 4, normals, 4*3);
-	textureID = setupTexture("../diamond.png");
+	textureID = setupTexture("../floor.png");
 	float timeElapsed = 0;
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))

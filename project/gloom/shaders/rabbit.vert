@@ -15,9 +15,9 @@ out mat4 MV;
 
 
 
-uniform layout(location = 5) mat4x4 MP;
+uniform layout(location = 3) mat4x4 MVP;
 uniform layout(location = 4) mat4x4 Model;
-uniform layout(location = 8) mat4x4 View;
+uniform layout(location = 15) mat4x4 View;
 uniform layout(location = 9) float timeElapsed;
 uniform layout(location = 10) float vertexCount;
 layout(binding = 11) uniform sampler2D texAnimation;
@@ -43,6 +43,6 @@ void main()
 
 
 	//gl_Position = MVP * vec4(position.xyz + normal*animationOffset*0.05, 1.0f);
-	gl_Position = MP * vec4(position.xyz, 1.0f);
+	gl_Position = View * vec4(position.xyz, 1.0f);
 	//gl_Position = MVP * vec4(squareposition.xyz, 1.0f);
 }
