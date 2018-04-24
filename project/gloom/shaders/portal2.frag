@@ -7,7 +7,7 @@ in layout(location = 15) mat3 TBN;
 
 
 out vec4 color;
-uniform layout(binding = 15)  sampler2D fbo_texture;
+uniform layout(binding = 7)  sampler2D fbo_texture;
 
 uniform layout(location = 9) float timeElapsed;
 //motion is cameraposition
