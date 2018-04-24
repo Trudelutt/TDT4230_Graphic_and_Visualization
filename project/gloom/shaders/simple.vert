@@ -15,7 +15,7 @@ out mat4 MV;
 
 
 
-uniform layout(location = 11) mat4x4 MVP;
+uniform layout(location = 5) mat4x4 MVP;
 uniform layout(location = 4) mat4x4 Model;
 uniform layout(location = 8) mat4x4 View;
 uniform layout(location = 9) float timeElapsed;
