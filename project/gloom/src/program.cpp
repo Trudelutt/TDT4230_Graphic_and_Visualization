@@ -35,6 +35,7 @@ GLuint setupDepthTexture(unsigned int pos);
 
 //Function to draw the scene
 void drawScene(GLsizei element, unsigned int vaoID);
+void drawWall(glm::mat4 view, unsigned int wall1ID, unsigned int wall2ID, unsigned int wall3ID, unsigned int wall4ID);
 //motion is position to the carmera
 
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -140,18 +141,13 @@ void runProgram(GLFWwindow* window)
 		0, 2, 3
 	};
 
-	float portal_vertices[] = {
-		1, 1, 0,
-		10, 1, 0, 
-		1,  10, 0, 
-		10,  10, 0
-	};
+
 
 	unsigned int portal_indices[] = {
 		0,1,2, 2,1,3,
 	};
 
-	glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(projection));
+
 
 
 	unsigned int textureID = setupTexture("../assets/floor.png", 1);
@@ -175,22 +171,21 @@ void runProgram(GLFWwindow* window)
 	glm::mat4 portal1 = glm::scale(glm::vec3(0.1)) * glm::translate(glm::mat4(1), glm::vec3(0, 0, 10));
 	glm::mat4 portal2 = glm::scale(glm::vec3(0.1)) * glm::rotate(glm::mat4(1), -45.0f, glm::vec3(0, 1, 0))* glm::translate(glm::mat4(1), glm::vec3(0, 1.2, 10));
 	
-	float timeElapsed = 0;
-	//uniform_name = "fbo_texture";
+	
 	glm::mat4 viewFromPortal1 =   glm::inverse(glm::translate(glm::mat4(1), glm::vec3(0, 0, 10))) * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
 	glm::mat4 viewFromPortal2 =  glm::inverse(glm::rotate(glm::mat4(1), -45.0f, glm::vec3(0, 1, 0))* glm::translate(glm::mat4(1), glm::vec3(0, 1.2, 10))) * glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+	glm::mat4 View;
 	// Rendering Loop
 	while (!glfwWindowShouldClose(window))
 	{
-		timeElapsed += getTimeDeltaSeconds();
-		glUniform1f(9, timeElapsed);
-
+		
+		View = glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0));
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glStencilFunc(GL_LEQUAL, 1, 0xFF);
 		//Floor and ceiling
 		shader.activate();
 		glUniform3fv(7, 1, glm::value_ptr(cameraFront));
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal2);
+		updateMVP(glm::mat4(1.0f),View*viewFromPortal2);
 		glBindVertexArray(vaosquareID);
 		drawScene(12, vaosquareID);
 		
@@ -200,21 +195,11 @@ void runProgram(GLFWwindow* window)
 
 		//wall
 		wallshader.activate();
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal2);
-		glBindVertexArray(wallvaosquareID);
-		drawScene(12, wallvaosquareID);
-		glBindVertexArray(leftwallvaosquareID);
-		drawScene(12, leftwallvaosquareID);
-		glBindVertexArray(rightwallvaosquareID);
-		drawScene(12, rightwallvaosquareID);
-		glBindVertexArray(backwallvaosquareID);
-		drawScene(12, backwallvaosquareID);
-
-
-
+		drawWall(View*viewFromPortal2, wallvaosquareID, leftwallvaosquareID, rightwallvaosquareID, backwallvaosquareID);
+	
 		//Rabbit
 		rabbitshader.activate();
-		updateMVP(glm::translate(cameraFront)* Scale * Rotation, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal2);
+		updateMVP(glm::translate(cameraFront)* Scale * Rotation, View*viewFromPortal2);
 		glBindVertexArray(rabbitvaoID);
 		drawScene(rabbitobj.vertexCount, rabbitvaoID);
 
@@ -228,13 +213,13 @@ void runProgram(GLFWwindow* window)
 		glClear(GL_STENCIL_BUFFER_BIT);
 		portalShader.activate();
 	
-		updateMVP(portal1, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal2);
+		updateMVP(portal1, View * viewFromPortal2);
 		glBindVertexArray(portalid);
 		drawScene(12, portalid);
 		
 
 		
-		updateMVP(portal2, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal2);
+		updateMVP(portal2, View * viewFromPortal2);
 		
 		portal2Shader.activate();
 		glBindVertexArray(portal2id);
@@ -255,7 +240,7 @@ void runProgram(GLFWwindow* window)
 		//Floor and ceiling
 		shader.activate();
 		glUniform3fv(7, 1, glm::value_ptr(cameraFront));
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal1);
+		updateMVP(glm::mat4(1.0f), View*viewFromPortal1);
 		glBindVertexArray(vaosquareID);
 		drawScene(12, vaosquareID);
 
@@ -265,21 +250,11 @@ void runProgram(GLFWwindow* window)
 
 		//wall
 		wallshader.activate();
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal1);
-		glBindVertexArray(wallvaosquareID);
-		drawScene(12, wallvaosquareID);
-		glBindVertexArray(leftwallvaosquareID);
-		drawScene(12, leftwallvaosquareID);
-		glBindVertexArray(rightwallvaosquareID);
-		drawScene(12, rightwallvaosquareID);
-		glBindVertexArray(backwallvaosquareID);
-		drawScene(12, backwallvaosquareID);
-
-
+		drawWall(View*viewFromPortal1, wallvaosquareID, leftwallvaosquareID, rightwallvaosquareID, backwallvaosquareID);
 
 		//Rabbit
 		rabbitshader.activate();
-		updateMVP(glm::translate(cameraFront)* Scale * Rotation, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal1);
+		updateMVP(glm::translate(cameraFront)* Scale * Rotation, View * viewFromPortal1);
 		glBindVertexArray(rabbitvaoID);
 		drawScene(rabbitobj.vertexCount, rabbitvaoID);
 
@@ -293,13 +268,13 @@ void runProgram(GLFWwindow* window)
 		glClear(GL_STENCIL_BUFFER_BIT);
 		portalShader.activate();
 
-		updateMVP(portal1, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal1);
+		updateMVP(portal1, View * viewFromPortal1);
 		glBindVertexArray(portalid);
 		drawScene(12, portalid);
 
 
 		portal2Shader.activate();
-		updateMVP(portal2, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0))*viewFromPortal1);
+		updateMVP(portal2, View *viewFromPortal1);
 
 		glBindVertexArray(portal2id);
 		drawScene(12, portal2id);
@@ -314,38 +289,154 @@ void runProgram(GLFWwindow* window)
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		portalShader.activate();
-		updateMVP(portal1, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0)));
+		updateMVP(portal1, View);
 		glBindVertexArray(portalid);
 		drawScene(12, portalid);
 
 		portal2Shader.activate();
-		updateMVP(portal2, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0)));
+		updateMVP(portal2, View);
 		glBindVertexArray(portal2id);
 		drawScene(12, portal2id);
 	
 		
 		shader.activate();
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0)));
+		updateMVP(glm::mat4(1.0f), View);
 		glBindVertexArray(vaosquareID);
 		drawScene(12, vaosquareID);
 
 		glBindVertexArray(ceilingvaosquareID);
 		drawScene(12, ceilingvaosquareID);
 		wallshader.activate();
-		updateMVP(glm::mat4(1.0f), glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0)));
-		glBindVertexArray(wallvaosquareID);
-		drawScene(12, wallvaosquareID);
-		glBindVertexArray(leftwallvaosquareID);
-		drawScene(12, leftwallvaosquareID);
-		glBindVertexArray(rightwallvaosquareID);
-		drawScene(12, rightwallvaosquareID);
-		glBindVertexArray(backwallvaosquareID);
-		drawScene(12, backwallvaosquareID);
+		drawWall(View, wallvaosquareID, leftwallvaosquareID, rightwallvaosquareID, backwallvaosquareID);
 
 		rabbitshader.activate();
-		updateMVP(glm::translate(cameraFront)* Scale * Rotation, glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0, 1, 0)));
+		updateMVP(glm::translate(cameraFront)* Scale * Rotation, View);
 		glBindVertexArray(rabbitvaoID);
 		drawScene(rabbitobj.vertexCount, rabbitvaoID);
+
+		/*
+			// Disable color and depth drawing
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDepthMask(GL_FALSE);
+
+			// Disable depth test
+			glDisable(GL_DEPTH_TEST);
+
+			// Enable stencil test, to prevent drawing outside
+			// region of current portal depth
+			glEnable(GL_STENCIL_TEST);
+
+			// Fail stencil test when inside of outer portal
+			// (fail where we should be drawing the inner portal)
+			glStencilFunc(GL_NEVER, 1, 0xFF);
+
+			// Increment stencil value on stencil fail
+			// (on area of inner portal)
+			glStencilOp(GL_INCR, GL_KEEP, GL_KEEP);
+
+			// Enable (writing into) all stencil bits
+			glStencilMask(0xFF);
+
+			// Draw portal into stencil buffer
+			portalShader.activate();
+			glBindVertexArray(portalid);
+			drawScene(12, portalid);
+			updateMVP(portal1, View * viewFromPortal2);
+
+
+			// Calculate view matrix as if the player was already teleported
+		
+
+			// Base case, render inside of inner portal
+			
+				// Enable color and depth drawing
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDepthMask(GL_TRUE);
+
+			
+
+			glEnable(GL_STENCIL_TEST);
+
+			// Disable drawing into stencil buffer
+			glStencilMask(0x00);
+
+				// Draw only where stencil value == recursionLevel + 1
+				// which is where we just drew the new portal
+			glStencilFunc(GL_LEQUAL, 1, 0xFF);
+
+			shader.activate();
+			glUniform3fv(7, 1, glm::value_ptr(cameraFront));
+			updateMVP(glm::mat4(1.0f), View*viewFromPortal2);
+			glBindVertexArray(vaosquareID);
+			drawScene(12, vaosquareID);
+
+			glBindVertexArray(ceilingvaosquareID);
+			drawScene(12, ceilingvaosquareID);
+
+
+			//wall
+			wallshader.activate();
+			drawWall(View*viewFromPortal2, wallvaosquareID, leftwallvaosquareID, rightwallvaosquareID, backwallvaosquareID);
+
+			//Rabbit
+			rabbitshader.activate();
+			updateMVP(glm::translate(cameraFront)* Scale * Rotation, View*viewFromPortal2);
+			glBindVertexArray(rabbitvaoID);
+			drawScene(rabbitobj.vertexCount, rabbitvaoID);
+		
+			glDisable(GL_STENCIL_TEST);
+			
+
+		
+
+
+		// Disable color writing
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		// Enable the depth test, and depth writing.
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
+		// Make sure we always write the data into the buffer
+		//glDepthFunc(GL_ALWAYS);
+
+		// Clear the depth buffer
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		// Draw portals into depth buffer
+		portalShader.activate();
+		glBindVertexArray(portalid);
+		drawScene(12, portalid);
+		updateMVP(portal1, View );
+
+
+		
+
+		// Enable color and depth drawing again
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthMask(GL_TRUE);
+
+		// And enable the depth test
+		//glEnable(GL_DEPTH_TEST);
+
+		// Draw scene objects normally, only at recursionLevel
+		shader.activate();
+		updateMVP(glm::mat4(1.0f), View);
+		glBindVertexArray(vaosquareID);
+		drawScene(12, vaosquareID);
+
+		glBindVertexArray(ceilingvaosquareID);
+		drawScene(12, ceilingvaosquareID);
+		wallshader.activate();
+		drawWall(View, wallvaosquareID, leftwallvaosquareID, rightwallvaosquareID, backwallvaosquareID);
+
+		rabbitshader.activate();
+		updateMVP(glm::translate(cameraFront)* Scale * Rotation, View);
+		glBindVertexArray(rabbitvaoID);
+		drawScene(rabbitobj.vertexCount, rabbitvaoID);*/
+
+
+
 		// Handle other events
 		glfwPollEvents();
 		handleKeyboardInput(window);
@@ -513,6 +604,18 @@ void drawScene(GLsizei element, unsigned int vaoID) {
 	glDisableVertexAttribArray(0);
 
 
+}
+
+void drawWall(glm::mat4 view, unsigned int wall1ID, unsigned int wall2ID, unsigned int wall3ID, unsigned int wall4ID ) {
+	updateMVP(glm::mat4(1.0f), view);
+	glBindVertexArray(wall1ID);
+	drawScene(12, wall1ID);
+	glBindVertexArray(wall2ID);
+	drawScene(12, wall2ID);
+	glBindVertexArray(wall3ID);
+	drawScene(12, wall3ID);
+	glBindVertexArray(wall4ID);
+	drawScene(12, wall4ID);
 }
 //
 void handleKeyboardInput(GLFWwindow* window)
