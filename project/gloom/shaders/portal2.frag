@@ -4,13 +4,13 @@ in vec2 UV;
 
 
 out vec4 color;
-uniform layout(binding = 7)  sampler2D texture;
+uniform layout(location = 7) vec3 portalColor;
 
 
 void main()
 {
-  vec3 materialColor = texture( texture, UV ).rgb;
-color = vec4(materialColor,1.0);
+
+color = vec4(portalColor,1.0);
 	
 
 
